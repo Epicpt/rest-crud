@@ -1,0 +1,95 @@
+package handlers
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"strconv"
+
+	"rest-crud/repository"
+
+	"github.com/go-chi/chi/v5"
+)
+
+// POST /placements  – создание размещения
+
+func (h *Handler) CreatePlacement(w http.ResponseWriter, r *http.Request) {
+	var p repository.Placement
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		http.Error(w, "Неверный формат запроса", http.StatusBadRequest)
+		return
+	}
+
+	id, err := h.repo.CreatePlacement(p)
+	if err != nil {
+		log.Printf("Ошибка создания размещения: %v", err)
+		http.Error(w, "Ошибка создания размещения", http.StatusInternalServerError)
+		return
+	}
+
+	// Обновляем кеш
+	h.cache.UpdateCacheWhenCreatePlacement(p, id)
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]int{"id": id})
+}
+
+func (h *Handler) UpdatePlacement(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Неверный ID", http.StatusBadRequest)
+		return
+	}
+
+	var p repository.Placement
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+		return
+	}
+	p.ID = id
+
+	if err := h.repo.UpdatePlacement(p); err != nil {
+		http.Error(w, "Ошибка обновления размещения", http.StatusInternalServerError)
+		return
+	}
+
+	// Обновляем кеш
+	h.cache.UpdateCacheWhenUpdatePlacement(p)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Placement обновлён"})
+}
+
+func (h *Handler) DeletePlacement(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Неверный ID", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.repo.DeletePlacement(id); err != nil {
+		http.Error(w, "Ошибка удаления размещения", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Placement удалён"})
+}
+
+func (h *Handler) GetPlacements(w http.ResponseWriter, r *http.Request) {
+	page, limit := getPaginationParams(r)
+
+	placements, total := h.cache.GetPlacements(page, limit)
+
+	response := map[string]interface{}{
+		"page":       page,
+		"limit":      limit,
+		"total":      total,
+		"placements": placements,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
