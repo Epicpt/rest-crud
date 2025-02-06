@@ -12,6 +12,7 @@ go mod tidy
 ```
 ### Настройка базы данных
 * Создайте таблицу в PostgreSQL.
+* Создайте файл config/config.yaml на основе config/config.example.yaml
 * Для настройки базы данных измените данные в URL подключения в файле config/config.yaml.
 ```
 database:

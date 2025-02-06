@@ -1,0 +1,4 @@
+database:
+  url: "postgres://LOGIN:PASSWORD@localhost:5432/DB_NAME?sslmode=disable"
+server:
+  port: "8080"
