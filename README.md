@@ -1,6 +1,6 @@
 # REST CRUD Application
 
-REST CRUD Application - это веб-приложение на Go для управления placement и webmasters c кешированием данных in-memory.
+REST CRUD Application - это веб-приложение на Go для управления placements и webmasters c кешированием данных in-memory.
 
 ## Установка
 
@@ -17,9 +17,10 @@ go mod tidy
 database:
   url: "postgres://LOGIN:PASSWORD@localhost:5432/DB_NAME?sslmode=disable"
 ```
-LOGIN - логин в PostgreSQL
-PASSWORD - пароль в PostgreSQL
-DB_NAME - название таблицы
+
+ LOGIN - логин в PostgreSQL
+ PASSWORD - пароль в PostgreSQL
+ DB_NAME - название таблицы
 
 ## Запуск
 ```
