@@ -93,11 +93,12 @@ func (c *Cache) GetWebmasters(page, limit int) []WebmasterWithPlacements {
 	return paginatedWebmasters
 }
 
+// LoadCacheFromDB - загружает данные из БД в кеш
 func (c *Cache) LoadCacheFromDB(repo *repository.Repository) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	webmasters, err := repo.GetAllWebmasters() // Функция для загрузки всех веб-мастеров из БД
+	webmasters, err := repo.GetAllWebmasters()
 	if err != nil {
 		return err
 	}
@@ -105,7 +106,7 @@ func (c *Cache) LoadCacheFromDB(repo *repository.Repository) error {
 		c.webmasters[wm.ID] = wm
 	}
 
-	placements, err := repo.GetAllPlacements() // Функция для загрузки всех размещений
+	placements, err := repo.GetAllPlacements()
 	if err != nil {
 		return err
 	}
@@ -124,7 +125,7 @@ func (c *Cache) UpdateCacheWhenCreatePlacement(p repository.Placement, id int) {
 
 	// Проверяем, есть ли уже размещения для этого UserID
 	if _, exists := c.placements[p.UserID]; !exists {
-		c.placements[p.UserID] = []repository.Placement{} // Инициализируем срез, если его не было
+		c.placements[p.UserID] = []repository.Placement{}
 	}
 
 	c.placements[p.UserID] = append(c.placements[p.UserID], p)

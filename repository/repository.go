@@ -12,23 +12,23 @@ type Repository struct {
 	db *sqlx.DB
 }
 
+// NewRepository создает новый экземпляр репозитория
 func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// Init инициализирует репозиторий
 func Init(cfg *config.Config) (*sqlx.DB, error) {
 
 	// Подключаемся к БД
 	db, err := sqlx.Open("postgres", cfg.Database.URL)
 	if err != nil {
-		fmt.Errorf("Ошибка подключения к БД: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("Ошибка подключения к БД: %v", err)
 	}
 
 	// Проверяем и создаём таблицы
 	if err := ensureTables(db); err != nil {
-		fmt.Errorf("Ошибка инициализации таблиц: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("Ошибка инициализации таблиц: %v", err)
 	}
 
 	return db, nil
@@ -58,7 +58,7 @@ func ensureTables(db *sqlx.DB) error {
 			log.Printf("Ошибка выполнения запроса: %s, ошибка: %v", query, err)
 			return err
 		}
-		log.Printf("Таблица успешно проверена или создана: %s", query)
+
 	}
 
 	return nil

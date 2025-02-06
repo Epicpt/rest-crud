@@ -20,8 +20,6 @@ func (h *Handler) CreateWebmaster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Создаём вебмастера: %+v", wm) // удалить
-
 	id, err := h.repo.CreateWebMaster(&wm)
 	if err != nil {
 		log.Printf("Ошибка создания веб-мастера: %v", err)
@@ -33,7 +31,11 @@ func (h *Handler) CreateWebmaster(w http.ResponseWriter, r *http.Request) {
 	h.cache.UpdateCacheWhenCreateWebmaster(wm, id)
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int{"id": id})
+	if errEncode := json.NewEncoder(w).Encode(map[string]int{"id": id}); errEncode != nil {
+		log.Printf("Ошибка json encode: %v", errEncode)
+		http.Error(w, "Ошибка при отправке ответа", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handler) UpdateWebmaster(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +64,11 @@ func (h *Handler) UpdateWebmaster(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Webmaster обновлён"})
+	if errEncode := json.NewEncoder(w).Encode(map[string]string{"message": "Webmaster обновлён"}); errEncode != nil {
+		log.Printf("Ошибка json encode: %v", errEncode)
+		http.Error(w, "Ошибка при отправке ответа", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handler) DeleteWebmaster(w http.ResponseWriter, r *http.Request) {
@@ -84,11 +90,19 @@ func (h *Handler) DeleteWebmaster(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Webmaster удалён"})
+	if errEncode := json.NewEncoder(w).Encode(map[string]string{"message": "Webmaster удалён"}); errEncode != nil {
+		log.Printf("Ошибка json encode: %v", errEncode)
+		http.Error(w, "Ошибка при отправке ответа", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handler) GetWebmasters(w http.ResponseWriter, r *http.Request) {
-	page, limit := getPaginationParams(r)
+	page, limit, err := getPaginationParams(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	webmasters := h.cache.GetWebmasters(page, limit)
 
@@ -99,5 +113,9 @@ func (h *Handler) GetWebmasters(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if errEncode := json.NewEncoder(w).Encode(response); errEncode != nil {
+		log.Printf("Ошибка json encode: %v", errEncode)
+		http.Error(w, "Ошибка при отправке ответа", http.StatusInternalServerError)
+		return
+	}
 }

@@ -16,18 +16,21 @@ func (r *Repository) CreateWebMaster(wm *Webmaster) (int, error) {
 	return id, err
 }
 
+// Обновление веб-мастера в БД
 func (r *Repository) UpdateWebmaster(wm Webmaster) error {
 	query := `UPDATE webmasters SET name = $1, last_name = $2, email = $3, status = $4 WHERE id = $5`
 	_, err := r.db.Exec(query, wm.Name, wm.LastName, wm.Email, wm.Status, wm.ID)
 	return err
 }
 
+// Удаление веб-мастера из БД
 func (r *Repository) DeleteWebmaster(id int) error {
 	query := `DELETE FROM webmasters WHERE id = $1`
 	_, err := r.db.Exec(query, id)
 	return err
 }
 
+// Получение всех веб-мастеров из БД
 func (r *Repository) GetAllWebmasters() ([]Webmaster, error) {
 	query := "SELECT id, name, last_name, email, status FROM webmasters"
 	var webmasters []Webmaster

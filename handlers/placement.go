@@ -12,7 +12,6 @@ import (
 )
 
 // POST /placements  – создание размещения
-
 func (h *Handler) CreatePlacement(w http.ResponseWriter, r *http.Request) {
 	var p repository.Placement
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
@@ -31,9 +30,15 @@ func (h *Handler) CreatePlacement(w http.ResponseWriter, r *http.Request) {
 	h.cache.UpdateCacheWhenCreatePlacement(p, id)
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int{"id": id})
+	if errEncode := json.NewEncoder(w).Encode(map[string]int{"id": id}); errEncode != nil {
+		log.Printf("Ошибка json encode: %v", errEncode)
+		http.Error(w, "Ошибка при отправке ответа", http.StatusInternalServerError)
+		return
+	}
+
 }
 
+// PUT /placements/:id  – изменение размещения
 func (h *Handler) UpdatePlacement(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -62,9 +67,14 @@ func (h *Handler) UpdatePlacement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Placement обновлён"})
+	if errEncode := json.NewEncoder(w).Encode(map[string]string{"message": "Placement обновлён"}); errEncode != nil {
+		log.Printf("Ошибка json encode: %v", errEncode)
+		http.Error(w, "Ошибка при отправке ответа", http.StatusInternalServerError)
+		return
+	}
 }
 
+// DELETE /placements/:id  – удаление размещения
 func (h *Handler) DeletePlacement(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -86,12 +96,20 @@ func (h *Handler) DeletePlacement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Placement удалён"})
+	if errEncode := json.NewEncoder(w).Encode(map[string]string{"message": "Placement удалён"}); errEncode != nil {
+		log.Printf("Ошибка json encode: %v", errEncode)
+		http.Error(w, "Ошибка при отправке ответа", http.StatusInternalServerError)
+		return
+	}
 }
 
+// GET /placements  – получение списка размещений
 func (h *Handler) GetPlacements(w http.ResponseWriter, r *http.Request) {
-	page, limit := getPaginationParams(r)
-
+	page, limit, err := getPaginationParams(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	placements := h.cache.GetPlacements(page, limit)
 
 	response := map[string]interface{}{
@@ -101,5 +119,9 @@ func (h *Handler) GetPlacements(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if errEncode := json.NewEncoder(w).Encode(response); errEncode != nil {
+		log.Printf("Ошибка json encode: %v", errEncode)
+		http.Error(w, "Ошибка при отправке ответа", http.StatusInternalServerError)
+		return
+	}
 }

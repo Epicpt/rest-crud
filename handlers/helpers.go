@@ -1,18 +1,24 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 )
 
-func getPaginationParams(r *http.Request) (int, int) {
-	page, _ := strconv.Atoi(r.URL.Query().Get("page")) // обработать ошибки и выводить дальше вверх как bad request
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if page < 1 {
-		page = 1
+// getPaginationParams – получение параметров пагинации из URL запроса
+func getPaginationParams(r *http.Request) (int, int, error) {
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		return 0, 0, fmt.Errorf("invalid page parameter")
 	}
-	if limit < 1 {
-		limit = 10
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		return 0, 0, fmt.Errorf("invalid limit parameter")
 	}
-	return page, limit
+	return page, limit, nil
 }
