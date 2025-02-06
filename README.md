@@ -18,9 +18,9 @@ database:
   url: "postgres://LOGIN:PASSWORD@localhost:5432/DB_NAME?sslmode=disable"
 ```
 
- LOGIN - логин в PostgreSQL
- PASSWORD - пароль в PostgreSQL
- DB_NAME - название таблицы
+ LOGIN - логин в PostgreSQL  
+ PASSWORD - пароль в PostgreSQL  
+ DB_NAME - название таблицы  
 
 ## Запуск
 ```
