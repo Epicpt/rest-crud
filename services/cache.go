@@ -1,7 +1,9 @@
 package services
 
 import (
+	"fmt"
 	"rest-crud/repository"
+	"sort"
 	"sync"
 )
 
@@ -29,56 +31,66 @@ func NewCache() *Cache {
 }
 
 // GetPlacements - получает список размещений с пагинацией
-func (c *Cache) GetPlacements(page, limit int) ([]repository.Placement, int) {
+func (c *Cache) GetPlacements(page, limit int) []repository.Placement {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var allPlacements []repository.Placement
-	for _, pls := range c.placements {
-		allPlacements = append(allPlacements, pls...) // Собираем все размещения в один список
+	// Извлекаем и сортируем ключи
+	keys := make([]int, 0, len(c.placementsByID))
+	for k := range c.placementsByID {
+		keys = append(keys, k)
 	}
+	sort.Ints(keys)
 
-	total := len(allPlacements)
 	start := (page - 1) * limit
-	if start > total {
-		return []repository.Placement{}, total
+	count := 0
+	var paginatedPlacements []repository.Placement
+
+	for _, k := range keys {
+		if count >= start && count < start+limit {
+			paginatedPlacements = append(paginatedPlacements, c.placementsByID[k])
+		}
+		count++
+		if count >= start+limit {
+			break
+		}
 	}
 
-	end := start + limit
-	if end > total {
-		end = total
-	}
-
-	return allPlacements[start:end], total
+	return paginatedPlacements
 }
 
 // GetWebmasters - получает список вебмастеров с вложенными размещениями и пагинацией
-func (c *Cache) GetWebmasters(page, limit int) ([]WebmasterWithPlacements, int) {
+func (c *Cache) GetWebmasters(page, limit int) []WebmasterWithPlacements {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var allWebmasters []WebmasterWithPlacements
-	for _, wm := range c.webmasters {
-		// Создаем новую структуру для вебмастера с размещениями
-		wmWithPlacements := WebmasterWithPlacements{
-			Webmaster:  wm,
-			Placements: c.placements[wm.ID],
-		}
-		allWebmasters = append(allWebmasters, wmWithPlacements)
+	// Извлекаем и сортируем ключи
+	keys := make([]int, 0, len(c.webmasters))
+	for k := range c.webmasters {
+		keys = append(keys, k)
 	}
+	sort.Ints(keys)
 
-	total := len(allWebmasters)
 	start := (page - 1) * limit
-	if start > total {
-		return []WebmasterWithPlacements{}, total
+	count := 0
+	var paginatedWebmasters []WebmasterWithPlacements
+
+	for _, k := range keys {
+		if count >= start && count < start+limit {
+			wm := c.webmasters[k]
+			wmWithPlacements := WebmasterWithPlacements{
+				Webmaster:  wm,
+				Placements: c.placements[wm.ID],
+			}
+			paginatedWebmasters = append(paginatedWebmasters, wmWithPlacements)
+		}
+		count++
+		if count >= start+limit {
+			break
+		}
 	}
 
-	end := start + limit
-	if end > total {
-		end = total
-	}
-
-	return allWebmasters[start:end], total
+	return paginatedWebmasters
 }
 
 func (c *Cache) LoadCacheFromDB(repo *repository.Repository) error {
@@ -109,21 +121,117 @@ func (c *Cache) UpdateCacheWhenCreatePlacement(p repository.Placement, id int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	p.ID = id
+
+	// Проверяем, есть ли уже размещения для этого UserID
+	if _, exists := c.placements[p.UserID]; !exists {
+		c.placements[p.UserID] = []repository.Placement{} // Инициализируем срез, если его не было
+	}
+
 	c.placements[p.UserID] = append(c.placements[p.UserID], p)
 	c.placementsByID[p.ID] = p
 }
 
-func (c *Cache) UpdateCacheWhenUpdatePlacement(p repository.Placement) {
+func (c *Cache) UpdateCacheWhenUpdatePlacement(p repository.Placement) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// Проверяем, существует ли размещение в кеше
+	oldPlacement, exists := c.placementsByID[p.ID]
+	if !exists {
+		return fmt.Errorf("размещение с ID %d не найдено в кеше", p.ID)
+	}
+
 	// Обновляем размещение в placements
-	for i, placement := range c.placements[c.placementsByID[p.ID].UserID] {
+	userID := oldPlacement.UserID
+	for i, placement := range c.placements[userID] {
 		if placement.ID == p.ID {
-			c.placements[c.placementsByID[p.ID].UserID][i] = p
-			break
+			c.placements[userID][i] = p
+			c.placementsByID[p.ID] = p
+			return nil
 		}
 	}
-	// Обновляем размещение в placementsByID
-	c.placementsByID[p.ID] = p
+
+	return fmt.Errorf("размещение с ID %d не найдено в списке вебмастеров %d", p.ID, userID)
+}
+
+func (c *Cache) UpdateCacheWhenDeletePlacement(id int) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Проверяем, существует ли размещение
+	placement, exists := c.placementsByID[id]
+	if !exists {
+		return fmt.Errorf("размещение с ID %d не найдено в кеше", id)
+	}
+
+	// Удаляем из кеша по ID
+	delete(c.placementsByID, id)
+
+	// Удаляем из кеша по UserID
+	userID := placement.UserID
+	placements, exists := c.placements[userID]
+	if !exists {
+		return fmt.Errorf("не найдено размещений для пользователя %d", userID)
+	}
+
+	var updated []repository.Placement
+	found := false
+	for _, p := range placements {
+		if p.ID != id {
+			updated = append(updated, p)
+		} else {
+			found = true
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("размещение с ID %d не найдено в списке пользователя %d", id, userID)
+	}
+
+	c.placements[userID] = updated
+	return nil
+}
+
+func (c *Cache) UpdateCacheWhenCreateWebmaster(wm repository.Webmaster, id int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Назначаем ID новому веб-мастеру
+	wm.ID = id
+
+	// Добавляем в кеш
+	c.webmasters[wm.ID] = wm
+
+	// Инициализируем пустой список размещений для нового веб-мастера
+	c.placements[wm.ID] = []repository.Placement{}
+}
+
+func (c *Cache) UpdateCacheWhenUpdateWebmaster(wm repository.Webmaster) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Проверяем, существует ли веб-мастер в кеше
+	if _, exists := c.webmasters[wm.ID]; !exists {
+		return fmt.Errorf("веб-мастер с ID %d не найден в кеше", wm.ID)
+	}
+
+	// Обновляем веб-мастера в кеше
+	c.webmasters[wm.ID] = wm
+	return nil
+}
+
+func (c *Cache) UpdateCacheWhenDeleteWebmaster(id int) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Проверяем, существует ли веб-мастер в кеше
+	if _, exists := c.webmasters[id]; !exists {
+		return fmt.Errorf("веб-мастер с ID %d не найден в кеше", id)
+	}
+
+	// Удаляем веб-мастера и его размещения из кеша
+	delete(c.webmasters, id)
+	delete(c.placements, id)
+
+	return nil
 }

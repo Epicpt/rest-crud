@@ -55,7 +55,11 @@ func (h *Handler) UpdatePlacement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Обновляем кеш
-	h.cache.UpdateCacheWhenUpdatePlacement(p)
+	err = h.cache.UpdateCacheWhenUpdatePlacement(p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Placement обновлён"})
@@ -74,6 +78,13 @@ func (h *Handler) DeletePlacement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Обновляем кеш
+	err = h.cache.UpdateCacheWhenDeletePlacement(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Placement удалён"})
 }
@@ -81,12 +92,11 @@ func (h *Handler) DeletePlacement(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetPlacements(w http.ResponseWriter, r *http.Request) {
 	page, limit := getPaginationParams(r)
 
-	placements, total := h.cache.GetPlacements(page, limit)
+	placements := h.cache.GetPlacements(page, limit)
 
 	response := map[string]interface{}{
 		"page":       page,
 		"limit":      limit,
-		"total":      total,
 		"placements": placements,
 	}
 
