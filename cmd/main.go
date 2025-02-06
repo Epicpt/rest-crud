@@ -23,10 +23,12 @@ func main() {
 
 	// Подключаемся к БД
 	db, err := repository.Init(cfg)
+	defer db.Close()
 	if err != nil {
 		log.Fatalf("Ошибка подключения к БД: %v", err)
 	}
-	defer db.Close()
+
+	log.Printf("Подключение к БД успешно")
 
 	repo := repository.NewRepository(db)
 	cache := services.NewCache()
@@ -35,7 +37,7 @@ func main() {
 	if err := cache.LoadCacheFromDB(repo); err != nil {
 		log.Fatalf("Ошибка загрузки кеша: %v", err)
 	}
-	log.Printf("Кэш успешно загружен %v", cache)
+	log.Printf("Кэш успешно загружен")
 
 	handler := handlers.NewHandler(repo, cache)
 
