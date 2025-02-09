@@ -30,6 +30,16 @@ func NewCache() *Cache {
 	}
 }
 
+// Метод для получения webmasters
+func (c *Cache) GetCacheWebmasters() map[int]repository.Webmaster {
+	return c.webmasters
+}
+
+// Метод для получения placementsByID
+func (c *Cache) GetCachePlacementsByID() map[int]repository.Placement {
+	return c.placementsByID
+}
+
 // GetPlacements - получает список размещений с пагинацией
 func (c *Cache) GetPlacements(page, limit int) []repository.Placement {
 	c.mu.RLock()
