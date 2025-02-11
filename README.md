@@ -1,6 +1,7 @@
 # REST CRUD Application
 
 REST CRUD Application - это веб-приложение на Go для управления placements и webmasters c кешированием данных in-memory.
+Сделано по ТЗ. Файл "scratch_6.md".
 
 ## Установка
 
