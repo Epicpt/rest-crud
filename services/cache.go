@@ -70,7 +70,7 @@ func (c *Cache) GetPlacements(page, limit int) []repository.Placement {
 }
 
 // GetWebmasters - получает список вебмастеров с вложенными размещениями и пагинацией
-func (c *Cache) GetWebmasters(page, limit int) []WebmasterWithPlacements {
+func (c *Cache) GetWebmasters(page, limit int) []repository.Webmaster {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -83,16 +83,14 @@ func (c *Cache) GetWebmasters(page, limit int) []WebmasterWithPlacements {
 
 	start := (page - 1) * limit
 	count := 0
-	var paginatedWebmasters []WebmasterWithPlacements
+	var paginatedWebmasters []repository.Webmaster
 
 	for _, k := range keys {
 		if count >= start && count < start+limit {
 			wm := c.webmasters[k]
-			wmWithPlacements := WebmasterWithPlacements{
-				Webmaster:  wm,
-				Placements: c.placements[wm.ID],
-			}
-			paginatedWebmasters = append(paginatedWebmasters, wmWithPlacements)
+			// Добавляем вложенные плейсменты
+			wm.Placements = c.placements[wm.ID]
+			paginatedWebmasters = append(paginatedWebmasters, wm)
 		}
 		count++
 		if count >= start+limit {
