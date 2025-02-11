@@ -10,3 +10,5 @@ require (
 require github.com/go-chi/chi/v5 v5.2.1
 
 require github.com/jmoiron/sqlx v1.4.0
+
+require github.com/DATA-DOG/go-sqlmock v1.5.2 // indirect

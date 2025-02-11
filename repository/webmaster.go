@@ -1,11 +1,12 @@
 package repository
 
 type Webmaster struct {
-	ID       int    `db:"id"`
-	Name     string `db:"name" json:"name"`
-	LastName string `db:"last_name" json:"last_name"`
-	Email    string `db:"email" json:"email"`
-	Status   string `db:"status" json:"status"`
+	ID         int         `db:"id"`
+	Name       string      `db:"name" json:"name"`
+	LastName   string      `db:"last_name" json:"last_name"`
+	Email      string      `db:"email" json:"email"`
+	Status     string      `db:"status" json:"status"`
+	Placements []Placement `json:"placements"`
 }
 
 // Добавление веб-мастера в БД
