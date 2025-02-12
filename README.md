@@ -64,9 +64,9 @@ go run main.go
                 "name": "John",
                 "last_name": "Doe",
                 "email": "john.doe@example.com",
-                "status": "active"
-            },
-            "Placements": []
+                "status": "active",
+                "Placements": []
+            }
         }
     ]
 }
@@ -120,9 +120,8 @@ go run main.go
                 "name": "John",
                 "last_name": "Doe",
                 "email": "john.doe@example.com",
-                "status": "active"
-            },
-            "Placements": [
+                "status": "active",
+                "Placements": [
                 {
                     "ID": 1,
                     "user_id": 1,
@@ -130,6 +129,7 @@ go run main.go
                     "description": "Description of the new placement"
                 }
             ]
+            }
         }
     ]
 }
