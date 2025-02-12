@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"rest-crud/repository"
-	"rest-crud/services"
+	services "rest-crud/services/cache"
 )
 
 type Handler struct {

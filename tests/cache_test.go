@@ -2,7 +2,7 @@ package tests
 
 import (
 	"rest-crud/repository"
-	"rest-crud/services"
+	services "rest-crud/services/cache"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"

@@ -9,6 +9,10 @@ type Webmaster struct {
 	Placements []Placement `json:"placements"`
 }
 
+func (w Webmaster) GetID() int {
+	return w.ID
+}
+
 // Добавление веб-мастера в БД
 func (r *Repository) CreateWebMaster(wm *Webmaster) (int, error) {
 	var id int

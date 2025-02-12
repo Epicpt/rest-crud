@@ -26,9 +26,13 @@ func (h *Handler) CreateWebmaster(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Ошибка создания веб-мастера", http.StatusInternalServerError)
 		return
 	}
+	// Назначаем ID новому веб-мастеру
+	wm.ID = id
 
 	// Обновляем кеш
-	h.cache.UpdateCacheWhenCreateWebmaster(wm, id)
+	if err = h.cache.UpdateCache("create", wm); err != nil {
+		log.Printf("Ошибка обновления кеша: %v", err)
+	}
 
 	w.WriteHeader(http.StatusCreated)
 	if errEncode := json.NewEncoder(w).Encode(map[string]int{"id": id}); errEncode != nil {
@@ -59,7 +63,7 @@ func (h *Handler) UpdateWebmaster(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Обновляем кеш
-	if err := h.cache.UpdateCacheWhenUpdateWebmaster(wm); err != nil {
+	if err := h.cache.UpdateCache("update", wm); err != nil {
 		log.Printf("Ошибка обновления кеша: %v", err)
 	}
 
@@ -84,8 +88,11 @@ func (h *Handler) DeleteWebmaster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var wm repository.Webmaster
+	wm.ID = id
+
 	// Удаляем из кеша
-	if err := h.cache.UpdateCacheWhenDeleteWebmaster(id); err != nil {
+	if err := h.cache.UpdateCache("delete", wm); err != nil {
 		log.Printf("Ошибка удаления из кеша: %v", err)
 	}
 

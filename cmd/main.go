@@ -7,7 +7,7 @@ import (
 	"rest-crud/config"
 	"rest-crud/handlers"
 	"rest-crud/repository"
-	"rest-crud/services"
+	services "rest-crud/services/cache"
 
 	"github.com/go-chi/chi/v5"
 	_ "github.com/lib/pq"

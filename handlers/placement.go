@@ -25,9 +25,14 @@ func (h *Handler) CreatePlacement(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Ошибка создания размещения", http.StatusInternalServerError)
 		return
 	}
+	p.ID = id
 
 	// Обновляем кеш
-	h.cache.UpdateCacheWhenCreatePlacement(p, id)
+	err = h.cache.UpdateCache("create", p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	w.WriteHeader(http.StatusCreated)
 	if errEncode := json.NewEncoder(w).Encode(map[string]int{"id": id}); errEncode != nil {
@@ -60,7 +65,7 @@ func (h *Handler) UpdatePlacement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Обновляем кеш
-	err = h.cache.UpdateCacheWhenUpdatePlacement(p)
+	err = h.cache.UpdateCache("update", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,8 +93,10 @@ func (h *Handler) DeletePlacement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var p repository.Placement
+	p.ID = id
 	// Обновляем кеш
-	err = h.cache.UpdateCacheWhenDeletePlacement(id)
+	err = h.cache.UpdateCache("delete", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

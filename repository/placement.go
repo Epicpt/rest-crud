@@ -7,6 +7,10 @@ type Placement struct {
 	Description string `db:"description" json:"description"`
 }
 
+func (p Placement) GetID() int {
+	return p.ID
+}
+
 // Добавление размещения в БД
 func (r *Repository) CreatePlacement(p Placement) (int, error) {
 	var id int
